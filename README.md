@@ -4,8 +4,6 @@ Certainly, here is the system description you provided rewritten for inclusion i
 
 ## AVR Microcontroller-Based Temperature Control System
 
-![System Diagram](system_diagram.png)
-
 ### System Description
 
 #### MCU1:
@@ -54,3 +52,8 @@ If the emergency state is activated for 7 seconds (using a timer with overflow m
 1. Write the abnormal state in the EEPROM.
 2. MCU1 activates the watchdog timer with the smallest time to reset MCU1.
 3. MCU2 monitors the abnormal condition for 5 seconds.
+
+![image](https://github.com/MoustafaAhmed01/CURT/assets/104157153/9c20e53a-82d7-4ec4-9799-bb62f530be98)
+
+![image](https://github.com/MoustafaAhmed01/CURT/assets/104157153/201c8dd3-8091-4f1e-bcfe-98020369deb7)
+
