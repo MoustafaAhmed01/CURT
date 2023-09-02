@@ -134,6 +134,10 @@ void Drivers_init(void)
 	ADC_init(&ADC_Config);
 	/* ---------------------------------------- */
 
+	/* Initializing LCD just for TEST*/
+	LCD_init();
+	/* ---------------------------------------- */
+
 	/* Initializing UART */
 	/*
 	 * UART_trSpeed : Double Speed
@@ -233,7 +237,7 @@ int main()
 
 	/**-----------------------Pre-start Section--------------------**/
 
-	/* Initializing all drivers: UART, DCMotor, Timer0, Timer1, External_Interrupts, ADC Stepper Motor */
+	/* Initializing all drivers: UART, DCMotor, Timer0, LCD, Stepper Motor */
 	Drivers_init();
 
 	/**-----------------------Main Section-------------------------**/
@@ -321,6 +325,10 @@ void Timer1_Handler(void)
 	/* Check 14 times on the temperature which is equivalent to 7 seconds */
 	if(14 > g_Counter)
 	{
+
+		LCD_moveCursor(0, 0);
+		LCD_intgerToString(g_Counter);
+
 		/* Read Temperature */
 		a_TempVal = LM35_getTemperature();
 

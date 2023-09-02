@@ -1,12 +1,73 @@
-23:08:59 **** Incremental Build of configuration Debug for project MCU2 ****
+23:22:04 **** Incremental Build of configuration Debug for project MCU2 ****
 make all 
+Building file: ../HAL/DcMotor.c
+Invoking: AVR Compiler
+avr-gcc -Wall -g2 -gstabs -O0 -fpack-struct -fshort-enums -ffunction-sections -fdata-sections -std=gnu99 -funsigned-char -funsigned-bitfields -mmcu=atmega32 -DF_CPU=8000000UL -MMD -MP -MF"HAL/DcMotor.d" -MT"HAL/DcMotor.o" -c -o "HAL/DcMotor.o" "../HAL/DcMotor.c"
+In file included from ../HAL/../Libraries/Libraries.h:22,
+                 from ../HAL/DcMotor.c:19:
+c:/winavr-20100110/lib/gcc/../../avr/include/util/delay.h:90:3: warning: #warning "Compiler optimizations disabled; functions from <util/delay.h> won't work as designed"
+Finished building: ../HAL/DcMotor.c
+ 
+Building file: ../HAL/Servo_Motor.c
+Invoking: AVR Compiler
+avr-gcc -Wall -g2 -gstabs -O0 -fpack-struct -fshort-enums -ffunction-sections -fdata-sections -std=gnu99 -funsigned-char -funsigned-bitfields -mmcu=atmega32 -DF_CPU=8000000UL -MMD -MP -MF"HAL/Servo_Motor.d" -MT"HAL/Servo_Motor.o" -c -o "HAL/Servo_Motor.o" "../HAL/Servo_Motor.c"
+In file included from ../HAL/../Libraries/Libraries.h:22,
+                 from ../HAL/Servo_Motor.c:16:
+c:/winavr-20100110/lib/gcc/../../avr/include/util/delay.h:90:3: warning: #warning "Compiler optimizations disabled; functions from <util/delay.h> won't work as designed"
+../HAL/Servo_Motor.c: In function 'ServoMotor_Rotate':
+../HAL/Servo_Motor.c:40: warning: passing argument 1 of 'Timer2_PWM_Activate' from incompatible pointer type
+../HAL/Servo_Motor.c:45: warning: passing argument 1 of 'Timer2_PWM_Activate' from incompatible pointer type
+Finished building: ../HAL/Servo_Motor.c
+ 
+Building file: ../HAL/buzzer.c
+Invoking: AVR Compiler
+avr-gcc -Wall -g2 -gstabs -O0 -fpack-struct -fshort-enums -ffunction-sections -fdata-sections -std=gnu99 -funsigned-char -funsigned-bitfields -mmcu=atmega32 -DF_CPU=8000000UL -MMD -MP -MF"HAL/buzzer.d" -MT"HAL/buzzer.o" -c -o "HAL/buzzer.o" "../HAL/buzzer.c"
+In file included from ../HAL/../Libraries/Libraries.h:22,
+                 from ../HAL/buzzer.c:16:
+c:/winavr-20100110/lib/gcc/../../avr/include/util/delay.h:90:3: warning: #warning "Compiler optimizations disabled; functions from <util/delay.h> won't work as designed"
+Finished building: ../HAL/buzzer.c
+ 
+Building file: ../HAL/potentiometer.c
+Invoking: AVR Compiler
+avr-gcc -Wall -g2 -gstabs -O0 -fpack-struct -fshort-enums -ffunction-sections -fdata-sections -std=gnu99 -funsigned-char -funsigned-bitfields -mmcu=atmega32 -DF_CPU=8000000UL -MMD -MP -MF"HAL/potentiometer.d" -MT"HAL/potentiometer.o" -c -o "HAL/potentiometer.o" "../HAL/potentiometer.c"
+Finished building: ../HAL/potentiometer.c
+ 
+Building file: ../HAL/status_leds.c
+Invoking: AVR Compiler
+avr-gcc -Wall -g2 -gstabs -O0 -fpack-struct -fshort-enums -ffunction-sections -fdata-sections -std=gnu99 -funsigned-char -funsigned-bitfields -mmcu=atmega32 -DF_CPU=8000000UL -MMD -MP -MF"HAL/status_leds.d" -MT"HAL/status_leds.o" -c -o "HAL/status_leds.o" "../HAL/status_leds.c"
+In file included from ../HAL/../Libraries/Libraries.h:22,
+                 from ../HAL/status_leds.c:17:
+c:/winavr-20100110/lib/gcc/../../avr/include/util/delay.h:90:3: warning: #warning "Compiler optimizations disabled; functions from <util/delay.h> won't work as designed"
+Finished building: ../HAL/status_leds.c
+ 
+Building file: ../App/MCU2.c
+Invoking: AVR Compiler
+avr-gcc -Wall -g2 -gstabs -O0 -fpack-struct -fshort-enums -ffunction-sections -fdata-sections -std=gnu99 -funsigned-char -funsigned-bitfields -mmcu=atmega32 -DF_CPU=8000000UL -MMD -MP -MF"App/MCU2.d" -MT"App/MCU2.o" -c -o "App/MCU2.o" "../App/MCU2.c"
+In file included from ../App/../Libraries/Libraries.h:22,
+                 from ../App/MCU2.c:22:
+c:/winavr-20100110/lib/gcc/../../avr/include/util/delay.h:90:3: warning: #warning "Compiler optimizations disabled; functions from <util/delay.h> won't work as designed"
+Finished building: ../App/MCU2.c
+ 
+Building target: MCU2.elf
+Invoking: AVR C Linker
+avr-gcc -Wl,-Map,MCU2.map -mmcu=atmega32 -o "MCU2.elf"  ./MCAL/ADC.o ./MCAL/GPIO.o ./MCAL/TIMER.o ./MCAL/UART.o  ./HAL/DcMotor.o ./HAL/Servo_Motor.o ./HAL/buzzer.o ./HAL/potentiometer.o ./HAL/status_leds.o  ./App/MCU2.o   
+Finished building target: MCU2.elf
+ 
+Invoking: AVR Create Extended Listing
+avr-objdump -h -S MCU2.elf  >"MCU2.lss"
+Finished building: MCU2.lss
+ 
+Create Flash image (ihex format)
+avr-objcopy -R .eeprom -R .fuse -R .lock -R .signature -O ihex MCU2.elf  "MCU2.hex"
+Finished building: MCU2.hex
+ 
 Invoking: Print Size
 avr-size --format=avr --mcu=atmega32 MCU2.elf
 AVR Memory Usage
 ----------------
 Device: atmega32
 
-Program:   15984 bytes (48.8% Full)
+Program:   10308 bytes (31.5% Full)
 (.text + .data + .bootloader)
 
 Data:        306 bytes (14.9% Full)
@@ -16,5 +77,5 @@ Data:        306 bytes (14.9% Full)
 Finished building: sizedummy
  
 
-23:09:00 Build Finished. 0 errors, 0 warnings. (took 197ms)
+23:22:05 Build Finished. 0 errors, 7 warnings. (took 1s.157ms)
 

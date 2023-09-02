@@ -116,6 +116,10 @@ void Drivers_init(void)
 	ADC_init(&ADC_Config);
 	/* ---------------------------------------- */
 
+	/* Initializing LCD just for TEST*/
+	LCD_init();
+	/* ---------------------------------------- */
+
 	/* Initializing UART */
 	/*
 	 * UART_trSpeed : Double Speed
@@ -198,7 +202,7 @@ int main()
 
 	/**-----------------------Pre-start Section--------------------**/
 
-	/* Initializing all drivers: UART, DCMotor, Timer0, Timer1, Timer2, Buzzer,ADC, Stepper Motor */
+	/* Initializing all drivers: UART, DCMotor, Timer0, LCD, Stepper Motor */
 	Drivers_init();
 
 	/**-----------------------Main Section-------------------------**/

@@ -5,19 +5,16 @@
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
 ../HAL/DcMotor.c \
-../HAL/LCD.c \
 ../HAL/external_eeprom.c \
 ../HAL/lM35_TempSensor.c 
 
 OBJS += \
 ./HAL/DcMotor.o \
-./HAL/LCD.o \
 ./HAL/external_eeprom.o \
 ./HAL/lM35_TempSensor.o 
 
 C_DEPS += \
 ./HAL/DcMotor.d \
-./HAL/LCD.d \
 ./HAL/external_eeprom.d \
 ./HAL/lM35_TempSensor.d 
 

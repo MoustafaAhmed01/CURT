@@ -5,7 +5,6 @@
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
 ../HAL/DcMotor.c \
-../HAL/LCD.c \
 ../HAL/Servo_Motor.c \
 ../HAL/buzzer.c \
 ../HAL/potentiometer.c \
@@ -13,7 +12,6 @@ C_SRCS += \
 
 OBJS += \
 ./HAL/DcMotor.o \
-./HAL/LCD.o \
 ./HAL/Servo_Motor.o \
 ./HAL/buzzer.o \
 ./HAL/potentiometer.o \
@@ -21,7 +19,6 @@ OBJS += \
 
 C_DEPS += \
 ./HAL/DcMotor.d \
-./HAL/LCD.d \
 ./HAL/Servo_Motor.d \
 ./HAL/buzzer.d \
 ./HAL/potentiometer.d \
