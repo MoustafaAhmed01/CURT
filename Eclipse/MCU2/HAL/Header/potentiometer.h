@@ -1,0 +1,37 @@
+/******************************************************************************
+ *
+ * Module: Common - Platform Types Abstraction
+ *
+ * File Name: POTENTIOMETER.h
+ *
+ * Description: types for AVR
+ *
+ * Date Created: 2/9/2023
+ *
+ * Author: Moustafa Ahmed
+ *
+ *******************************************************************************/
+
+#ifndef POTENTIOMETER_H_
+#define POTENTIOMETER_H_
+
+/**-------------------------INCLUDES Section------------------------**/
+#include "../../Libraries/std_types.h"
+/**-------------------------Definitions & Config Section------------**/
+
+#define POTENTIOMETER_CHANNEL_ID         0
+
+/**-------------------------Function Dec. Section-------------------**/
+
+/*
+ * Description :
+ * Function responsible for calculate the temperature from the ADC digital value.
+ */
+uint16 Potentiometer_getVal(void);
+
+
+/**---------------------------------END-----------------------------**/
+
+
+
+#endif /* POTENTIOMETER_H_ */

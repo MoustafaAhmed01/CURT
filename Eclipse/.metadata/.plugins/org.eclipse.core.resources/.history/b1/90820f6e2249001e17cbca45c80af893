@@ -1,0 +1,108 @@
+/******************************************************************************
+ *
+ * Module: Common - Platform Types Abstraction
+ *
+ * File Name: CURT.c
+ *
+ * Description: types for AVR
+ *
+ * Date Created: 1/9/2023
+ *
+ * Author: Moustafa Ahmed Adel
+ *
+ *******************************************************************************/
+/**-------------------------INCLUDES Section------------------------**/
+
+#include <stdio.h>
+#include "../HAL/Header/DcMotor.h"
+#include "../HAL/Header/buzzer.h"
+#include "../HAL/Header/LCD.h"
+#include "../Libraries/Libraries.h"
+#include "../Libraries/std_types.h"
+#include "../MCAL/Header/TIMER.h"
+#include "../MCAL/Header/UART.h"
+#include "../MCAL/Header/ADC.h"
+
+/**-------------------------Macros----------------------------------**/
+#define CONTROL_READY 0x10
+/**-------------------------Extern  Section-------------------------**/
+
+/**-------------------------Global  Section-------------------------**/
+
+/**-------------------------STRUCTURES------------------------------**/
+
+
+/**-------------------------Function Dec. Section-------------------**/
+
+/*-------------------------------------------------------------------*/
+
+
+/**-------------------------Function Section------------------------**/
+/* Initializing all drivers */
+void Drivers_init(void)
+{
+	/* Initializing ADC */
+	//ADC_ConfigType ADC_Config = {AVCC, F_ADC128};
+	//ADC_init(&ADC_Config);
+	/* Initializing LCD */
+	LCD_init();
+	/* Initializing UART */
+	/*
+	 * UART_trSpeed : Double Speed
+	 * UART_RECEIVE_INT : No
+	 * UART_TRANSMIT_INT : No
+	 * UART_EMPTY_INT : No
+	 * UART_RECEIVER : Yes
+	 * UART_TRANSMITTER : Yes
+	 * UART_CharSize : 8-bit
+	 * UART_REG_SELECT : UBRRH
+	 * UART_MODE_SELECT : A-sync
+	 * UART_PARITY_SELECT : No
+	 * UART_STOP_BIT_SELECT : 1-bit
+	 * UART_CLOCK_POLARITY : A-sync Rising
+	 * baud_rate : 9600
+	 *
+	 */
+	UART_ConfigType UART_Config = {DOUBLE_TR_SPEED,RECEIVE_INT_EN_OFF,TRANSMIT_INT_EN_OFF,EMPTY_INT_EN_OFF,RECEIVER_EN_ON,TRANSMITTER_EN_ON,EIGHT_BIT,UBRRH_REG,ASYNCHRONOUS,PARITY_DISABLE,ONE_BIT,A_Sync_RISING_EDGE,9600};
+	UART_init(&UART_Config);
+
+	/* ------------------------------------------------------------------ */
+	/* Activating Interrupt system */
+	//SREG |= (1<<7);
+}
+
+/* ------------------------------------------------------------------ */
+
+int main()
+{
+	/**-----------------------Local Variables----------------------**/
+	volatile uint8 val = '0';
+	/**-----------------------Pre-start Section--------------------**/
+
+	/* Initializing all drivers: UART, DCMotor, Timer0, LCD, Stepper Motor */
+	Drivers_init();
+
+	/**-----------------------Main Section-------------------------**/
+	LCD_moveCursor(0, 0);
+	LCD_displayCharacter(val);
+	_delay_ms(1000);
+	//LCD_displayCharacter('a');
+	UART_sendByte(CONTROL_READY);
+	val = UART_receiveByte();
+
+	LCD_moveCursor(0, 0);
+	LCD_displayCharacter(val);
+	while(1)
+	{
+
+	}
+
+	return 0;
+}
+/**-------------------------END MAIN--------------------------------**/
+
+/**-------------------------Function Section------------------------**/
+
+/*-------------------------------------------------------------------*/
+
+/*-------------------------------------------------------------------*/

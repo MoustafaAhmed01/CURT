@@ -1,0 +1,46 @@
+/******************************************************************************
+ *
+ * Module: Common - Platform Types Abstraction
+ *
+ * File Name: status_leds.c
+ *
+ * Description: types for AVR
+ *
+ * Date Created: 2/9/2023
+ *
+ * Author: Moustafa Ahmed
+ *
+ *******************************************************************************/
+
+/**-------------------------INCLUDES Section------------------------**/
+#include "Header/Servo_Motor.h"
+
+#include "../Libraries/Libraries.h"
+#include "../MCAL/Header/GPIO.h"
+/**-------------------------Global Section--------------------------**/
+
+/**-------------------------Definitions & Config Section------------**/
+
+/**-------------------------Function Definition Section-------------**/
+/*
+ * Description:
+ * Initializing LEDS
+ */
+void Status_LEDS_Init(void)
+{
+	/* Initializing PINS direction */
+	GPIO_setupPinDirection(GREEN_LED_PORT_ID, GREEN_LED_PIN_ID, OUTPUT);
+}
+/* ---------------------------------------- */
+
+/*
+ * Description:
+ * Activating the required color
+ */
+void Status_LEDS_Color(Led_State COLOR)
+{
+
+}
+
+/**---------------------------------END-----------------------------**/
+

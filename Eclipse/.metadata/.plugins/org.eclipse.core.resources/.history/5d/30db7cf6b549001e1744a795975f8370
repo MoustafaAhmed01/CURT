@@ -1,0 +1,597 @@
+/******************************************************************************
+ *
+ * Module: Common - Platform Types Abstraction
+ *
+ * File Name: CURT.c
+ *
+ * Description: types for AVR
+ *
+ * Date Created: 1/9/2023
+ *
+ * Author: Moustafa Ahmed Adel
+ *
+ *******************************************************************************/
+/**-------------------------INCLUDES Section------------------------**/
+
+#include <stdio.h>
+#include <avr/wdt.h>
+#include "../HAL/Header/DcMotor.h"
+#include "../HAL/Header/lM35_TempSensor.h"
+#include "../HAL/Header/external_eeprom.h"
+#include "../HAL/Header/LCD.h"
+#include "../Libraries/Libraries.h"
+#include "../Libraries/std_types.h"
+#include "../MCAL/Header/TIMER.h"
+#include "../MCAL/Header/UART.h"
+#include "../MCAL/Header/ADC.h"
+#include "../MCAL/Header/TWI.h"
+#include "../MCAL/Header/interrupt.h"
+
+/**-------------------------Macros----------------------------------**/
+#define CONTROL_READY 		0x10
+#define E2PROM_STATE_ADD	0x0110
+/**-------------------------Enum Section----------------------------**/
+
+/*
+ * Description:
+ * Defining System state
+ * Target: Synch both MCUs to be in the same state
+ */
+typedef enum
+{
+	NORMAL_STATE, EMERGENCY_STATE, ABNORMAL_STATE
+}System_State;
+
+/**-------------------------External  Section-----------------------**/
+
+/**-------------------------Global  Section-------------------------**/
+/* Creating Global Variable to be used all over the code for controlling System state */
+System_State g_SystemState = NORMAL_STATE;
+
+/* Push Button Enable */
+uint8 g_PushButtonEN = 0;
+
+/* Reset Enable */
+uint8 g_ResetEnable = 0;
+
+/* Global Counter */
+uint8 g_Counter = 0;
+
+/* Timer1 Enabled or not */
+uint8 g_Timer1_EN = 0;
+
+
+/*
+ * Description:
+ *  Initializing Timer1 to be used in Emergency state
+ *  Configurations will be discussed @ Drivers_Init() function
+ *  Interrupt every 500ms
+ */
+Timer1_ConfigType TIMER1_Config = {Normal_A,Normal_B,Channel_A_ON,Channel_B_OFF,TIMER1_FALLING_EDGE,NOISE_CANCELER_OFF,F_TIMER11024,CTC_OCR1A,ENABLE_INTERRUPT,DISABLE_INTERRUPT,DISABLE_INTERRUPT,0,6200,0};
+/**-------------------------STRUCTURES------------------------------**/
+
+/**-------------------------Function Dec. Section-------------------**/
+/*
+ * Description:
+ * Will be called when the push button is used (Interrupt)
+ */
+void INT0_Handler(void);
+/* ---------------------------------------- */
+
+/*
+ * Description:
+ * Will be called when Timer1 interrupts
+ */
+void Timer1_Handler(void);
+/* ---------------------------------------- */
+
+/*
+ * Description:
+ * Controlling Normal state
+ */
+void Normal_State(void);
+/* ---------------------------------------- */
+
+/*
+ * Description:
+ * Controlling Emergency state
+ */
+void Emergency_State(void);
+/* ---------------------------------------- */
+
+/*
+ * Description:
+ * Controlling Abnormal state
+ */
+void Abnormal_State(void);
+/* ---------------------------------------- */
+
+/*
+ * Description:
+ * Controlling states
+ */
+void State_Control(void);
+/* ---------------------------------------- */
+
+/*
+ * Description:
+ * Runs the Reset protocol
+ */
+void Reset_Protocol(void);
+/*-------------------------------------------------------------------*/
+
+
+/**-------------------------Function Section------------------------**/
+/* Initializing all drivers */
+void Drivers_init(void)
+{
+
+	/* Initializing ADC */
+	/*
+	 * ADC_ReferenceVoltage : AVCC
+	 * ADC_Prescaler : F_CPU/128
+	 */
+	ADC_ConfigType ADC_Config = {AVCC, F_ADC128};
+	ADC_init(&ADC_Config);
+	/* ---------------------------------------- */
+
+	/* Initializing LCD just for TEST*/
+	LCD_init();
+	/* ---------------------------------------- */
+
+	/* Initializing UART */
+	/*
+	 * UART_trSpeed : Double Speed
+	 * UART_RECEIVE_INT : No
+	 * UART_TRANSMIT_INT : No
+	 * UART_EMPTY_INT : No
+	 * UART_RECEIVER : Yes
+	 * UART_TRANSMITTER : Yes
+	 * UART_CharSize : 8-bit
+	 * UART_REG_SELECT : UBRRH
+	 * UART_MODE_SELECT : A-sync
+	 * UART_PARITY_SELECT : No
+	 * UART_STOP_BIT_SELECT : 1-bit
+	 * UART_CLOCK_POLARITY : A-sync Rising
+	 * baud_rate : 9600
+	 *
+	 */
+	UART_ConfigType UART_Config = {DOUBLE_TR_SPEED,RECEIVE_INT_EN_OFF,TRANSMIT_INT_EN_OFF,EMPTY_INT_EN_OFF,RECEIVER_EN_ON,TRANSMITTER_EN_ON,EIGHT_BIT,UBRRH_REG,ASYNCHRONOUS,PARITY_DISABLE,ONE_BIT,A_Sync_RISING_EDGE,9600};
+	UART_init(&UART_Config);
+	/* ---------------------------------------- */
+
+	/* Initializing Timer0 PWM */
+	Timer0_ConfigType Timer0_PWM_Config;
+	Timer0_PWM_Config.Timer0_PreScaler = F0_TIMER64; /* F_CPU/64. Assuming F_PWM = 976.5 Hz */
+	Timer0_PWM_Init(&Timer0_PWM_Config);
+	/* ---------------------------------------- */
+
+	/* Initializing TWI */
+	/*
+	 * file name: twi.h
+	 *  -> Structure Configuration:
+	 *
+	 *  interruptControl : No
+	 *  ackControl : No
+	 *  twiControl : Yes
+	 *  prescalerControl : 1
+	 *  callRecControl : No
+	 *  address : 0x01
+	 *  bit_rate : 400,000 Kbps
+	 */
+	TWI_ConfigType TWI_Config = {TWI_INT_DISABLED, ACK_OFF, TWI_ENABLED,F_I2C_4, CALL_RECOGNITION_OFF,1,3};
+	TWI_init(&TWI_Config);
+	/* ---------------------------------------- */
+
+	/* Initializing Timer 1 */
+	/*
+	 * file name: TIMER.h
+	 *  -> Structure Configuration:
+	 *
+	 *  CompareModeA : Normal
+	 *  CompareModeB : Normal
+	 *  ForceCompareA : Activated
+	 *  ForceCompareB : Disabled
+	 *  EdgeControl : ---
+	 *  NoiseControl : Disabled
+	 *  F_TIMER1_CLOCK : F_CPU/1024
+	 *  WaveForm : CTC mode ,TOP: OCR1A
+	 *  interruptA : Enabled
+	 *  interruptB : Disabled
+	 *  interruptOvf : Disabled
+	 *  TCNT1_Value : 0
+	 *  OCR1A_Value : 7813
+	 *  OCR1B_Value : ---
+	 */
+	/* Setting the callback function*/
+	Timer1_setCallBackONE(Timer1_Handler);
+	/* ---------------------------------------- */
+
+	/* Initializing FAN */
+	DCMotor_init();
+	/* ---------------------------------------- */
+
+	/* Initializing Interrupt zero for the Push Button */
+	/*
+	 * interruptZeroEN :	Enabled
+	 * interruptOneEN  : 	Disabled
+	 * interruptTwoEN  : 	Disabled
+	 * controlZero :		Rising
+	 * controlOne  :		----
+	 * controlTwo  :		----
+	 *
+	 */
+	INT_ConfigType INT0_Config = {INT0_ENABLE, INT1_DISABLE, INT2_DISABLE, RISING_EDGE,0,0};
+	INT0_Init(&INT0_Config);
+	/* ---------------------------------------- */
+
+	/* Activating Interrupt system */
+	SREG |= (1<<7);
+}
+
+/* ------------------------------------------------------------------ */
+
+int main()
+{
+	/**-----------------------Local Variables----------------------**/
+
+	/**-----------------------Pre-start Section--------------------**/
+
+	/* Initializing all drivers: UART, DCMotor, Timer0, LCD, Stepper Motor */
+	Drivers_init();
+
+	/**-----------------------Main Section-------------------------**/
+
+	while(1)
+	{
+		/* State Control function */
+		State_Control();
+
+
+		if(NORMAL_STATE == g_SystemState)
+		{
+			/* Sync with MCU2 to let it know in which state it should perform */
+			while(UART_receiveByte() != CONTROL_READY){}
+			UART_sendByte('N'); /* Identifying Normal State */
+
+			/* Operate the Normal instructions */
+			Normal_State();
+		}
+		else if(EMERGENCY_STATE == g_SystemState)
+		{
+			/* Sync with MCU2 to let it know in which state it should perform */
+			while(UART_receiveByte() != CONTROL_READY){}
+			UART_sendByte('E'); /* Identifying Emergency State */
+
+			/* Operate the Emergency protocol */
+			Emergency_State();
+		}
+		else if(ABNORMAL_STATE == g_SystemState)
+		{
+			/* Just call the Abnormal state function */
+			Abnormal_State();
+		}
+		else
+		{
+			/* Do nothing */
+		}
+
+	}
+
+	return 0;
+}
+/**-------------------------END MAIN--------------------------------**/
+
+/**-------------------------Function Section------------------------**/
+/*
+ * Description:
+ * Will be called when the push button is used (Interrupt)
+ */
+void INT0_Handler(void)
+{
+	if(g_PushButtonEN)
+	{
+		/* Shutdown the Machine at MCU2 */
+		while(UART_receiveByte() != CONTROL_READY){}
+		UART_sendByte('S');
+
+		/* Disable the Push Button */
+		g_PushButtonEN = 0;
+	}
+	else
+	{
+		/* Do nothing */
+	}
+
+	return;
+}
+/* ---------------------------------------- */
+
+/*
+ * Description:
+ * Will be called when Timer1 interrupts
+ */
+void Timer1_Handler(void)
+{
+	/**-----------------------Local Variables----------------------**/
+	uint8 a_TempVal = 0;
+	/**-----------------------Main Section-------------------------**/
+	/* De-init Timer1 and Clear Time1_En */
+	Timer1_deInit();
+	g_Timer1_EN = 0;
+	/* Increment the Counter */
+	g_Counter++;
+
+
+
+
+
+	/* Check 14 times on the temperature which is equivalent to 7 seconds */
+	if(14 > g_Counter)
+	{
+
+		/* Read Temperature */
+		a_TempVal = LM35_getTemperature();
+
+		if(50 < a_TempVal)
+		{
+			/* Do nothing */
+		}
+		else
+		{
+			/* If it was less than 50 then go back to Normal state */
+			/* Write to E2PROM */
+			EEPROM_writeByte(E2PROM_STATE_ADD, NORMAL_STATE);
+			_delay_ms(10);
+
+			/* Clear Counter */
+			g_Counter = 0;
+		}
+	}
+	else
+	{
+		/* Clear Counter */
+		g_Counter = 0;
+
+		/* Enable the Reset */
+		g_ResetEnable = 1;
+	}
+
+	return;
+}
+/* ---------------------------------------- */
+
+/*
+ * Description:
+ * Controlling Normal state
+ */
+void Normal_State(void)
+{
+	/**-----------------------Local Variables----------------------**/
+	uint8 a_TempVal = 0;
+	/**-----------------------Main Section-------------------------**/
+	/* Write Normal state to E2PROM */
+	EEPROM_writeByte(E2PROM_STATE_ADD, NORMAL_STATE);
+	_delay_ms(10);
+
+	/* Read Temperature Sensor */
+	a_TempVal = LM35_getTemperature();
+
+	/* Based on the temperature apply the next steps */
+	if(20 > a_TempVal)
+	{
+		/* Disable the PushButton */
+		g_PushButtonEN = 0;
+
+		/* Fan stops */
+		//DCMotor_stop();
+		DcMotor_Rotate(ClockWise, 0);
+
+		/* Enable Green LED at MCU2 */
+		while(UART_receiveByte() != CONTROL_READY){}
+		UART_sendByte('G');
+	}
+	else if(20 <= a_TempVal && 40 > a_TempVal)
+	{
+		/* Disable the PushButton */
+		g_PushButtonEN = 0;
+
+		/* Enable FAN with PWM depends on Temperature value */
+		DcMotor_Rotate(ClockWise, 255*(a_TempVal/40.0));
+
+		/* Enable Yellow LED at MCU2 */
+		while(UART_receiveByte() != CONTROL_READY){}
+		UART_sendByte('Y');
+	}
+	else if(40 <= a_TempVal && 50 >= a_TempVal)
+	{
+		/* Fan Max speed */
+		DcMotor_Rotate(ClockWise, 255);
+
+		/* Enable Red LED at MCU2 */
+		while(UART_receiveByte() != CONTROL_READY){}
+		UART_sendByte('R');
+
+		/* Enable the Push Button */
+		g_PushButtonEN = 1;
+
+		/**************************LCD**TEST*****************=============================*****/
+		LCD_moveCursor(0, 0);
+		LCD_displayCharacter('P');
+	}
+	else if(50 < a_TempVal)
+	{
+		/* Disable the PushButton */
+		g_PushButtonEN = 0;
+
+		/* If (Temperature > 50) move to Emergency state */
+		/* Write to the E2PROM the new state */
+		EEPROM_writeByte(E2PROM_STATE_ADD, EMERGENCY_STATE);
+		_delay_ms(10);
+
+		/* Tell the MCU2 to HOLD till the next update */
+		while(UART_receiveByte() != CONTROL_READY){}
+		UART_sendByte('H');
+
+	}
+
+	return;
+}
+/* ---------------------------------------- */
+
+/*
+ * Description:
+ * Controlling Emergency state
+ */
+void Emergency_State(void)
+{
+	/**-----------------------Local Variables----------------------**/
+
+	/**-----------------------Main Section-------------------------**/
+	if(0 == g_Timer1_EN)
+	{
+		/* Start the timer to count 7 seconds (Interrupt every 500ms) */
+		Timer1_Init(&TIMER1_Config);
+		g_Timer1_EN = 1;
+	}
+	else
+	{
+		/* Skip the timer init */
+	}
+
+/*	 Write Emergency state in E2PROM
+	EEPROM_writeByte(E2PROM_STATE_ADD, EMERGENCY_STATE);
+	_delay_ms(10);*/
+
+	/* Fan Max speed */
+	DcMotor_Rotate(ClockWise, (255));
+
+	/*
+	 * The Interrupt should read the temperature and
+	 * change the state if the temperature was changed
+	 * if it wasn't changed within 7 seconds MCU1 Resets
+	 */
+
+	/*
+	 * If Reset was enabled
+	 * Write abnormal state in the E2PROM
+	 * Reset MCU1
+	 * MCU2> Abnormal state
+	 */
+	if(g_ResetEnable)
+	{
+		g_ResetEnable = 0;
+
+		/* Write Abnormal state at E2PROM */
+		EEPROM_writeByte(E2PROM_STATE_ADD, ABNORMAL_STATE);
+		_delay_ms(10);
+
+		/* Activate Abnormal protocols at MCU2 */
+		while(UART_receiveByte() != CONTROL_READY){}
+		UART_sendByte('A');
+
+		/*Reset MCU1*/
+		Reset_Protocol();
+	}
+	else
+	{
+		/* Do nothing, Timer1 Interrupt should deal with the state for now */
+	}
+
+	return;
+}
+/* ---------------------------------------- */
+
+/*
+ * Description:
+ * Controlling Abnormal state
+ */
+void Abnormal_State(void)
+{
+	/**-----------------------Local Variables----------------------**/
+	uint8 a_TempVal = 0;
+	/**-----------------------Main Section-------------------------**/
+	/*
+	 * Check on the temperature at first
+	 * Because if it was changed then change the state and return from the function
+	 */
+	/* Read Temperature */
+	a_TempVal = LM35_getTemperature();
+
+	/* Check on temperature */
+	if(50 < a_TempVal)
+	{
+
+		/*
+		 * If System was still in Abnormal state
+		 * MCU1 > FAN MAX
+		 * MCU2 > Red LED, Buzzer on, Stop the machine, Servo 90'C
+		 */
+		/* FAN MAX */
+		DcMotor_Rotate(ClockWise, 255);
+
+		/* MCU2 > Abnormal state */
+		/* Activate Abnormal protocols at MCU2 */
+		while(UART_receiveByte() != CONTROL_READY){}
+		UART_sendByte('A');
+
+	}
+	else
+	{
+		/* Change to normal state */
+		EEPROM_writeByte(E2PROM_STATE_ADD, NORMAL_STATE);
+		_delay_ms(10);
+	}
+
+	return;
+}
+
+/* ---------------------------------------- */
+
+/*
+ * Description:
+ * Runs the Reset protocol
+ */
+void Reset_Protocol(void)
+{
+	cli(); /* Disable interrupts to avoid accidental reset during WDRF clearing */
+	MCUCSR |= (1 << WDRF); /* Set the watchdog Reset Flag to trigger a reset */
+	wdt_enable(WDTO_15MS); /* Enable the watchdog timer with the shortest timeout */
+	while(1) {} /* Wait for the reset to occur */
+}
+/* ---------------------------------------- */
+
+/*
+ * Description:
+ * Controlling states
+ */
+void State_Control(void)
+{
+	/**-----------------------Local Variables----------------------**/
+	uint8 a_E2PROM_VAL = 0;
+	/**-----------------------Main Section-------------------------**/
+	/* Read the E2PROM at first */
+	EEPROM_readByte(E2PROM_STATE_ADD, &a_E2PROM_VAL);
+
+	/*
+	 * Apply the next step based on E2PROM value
+	 * Also, if the mode was Normal or not defined at first use move to else
+	 */
+	if(ABNORMAL_STATE == a_E2PROM_VAL)
+	{
+		g_SystemState = ABNORMAL_STATE;
+	}
+	else if(EMERGENCY_STATE == a_E2PROM_VAL)
+	{
+		g_SystemState = EMERGENCY_STATE;
+	}
+	else
+	{
+		g_SystemState = NORMAL_STATE;
+	}
+
+	return;
+}
+
+/*-------------------------------------------------------------------*/
+

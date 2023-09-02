@@ -1,0 +1,41 @@
+23:08:59 **** Incremental Build of configuration Debug for project MCU1 ****
+make all 
+Building file: ../App/MCU1.c
+Invoking: AVR Compiler
+avr-gcc -Wall -g2 -gstabs -O0 -fpack-struct -fshort-enums -ffunction-sections -fdata-sections -std=gnu99 -funsigned-char -funsigned-bitfields -mmcu=atmega32 -DF_CPU=8000000UL -MMD -MP -MF"App/MCU1.d" -MT"App/MCU1.o" -c -o "App/MCU1.o" "../App/MCU1.c"
+In file included from ../App/../Libraries/Libraries.h:22,
+                 from ../App/MCU1.c:22:
+c:/winavr-20100110/lib/gcc/../../avr/include/util/delay.h:90:3: warning: #warning "Compiler optimizations disabled; functions from <util/delay.h> won't work as designed"
+Finished building: ../App/MCU1.c
+ 
+Building target: MCU1.elf
+Invoking: AVR C Linker
+avr-gcc -Wl,-Map,MCU1.map -mmcu=atmega32 -o "MCU1.elf"  ./MCAL/ADC.o ./MCAL/GPIO.o ./MCAL/TIMER.o ./MCAL/UART.o ./MCAL/interrupt.o ./MCAL/twi.o  ./HAL/DcMotor.o ./HAL/LCD.o ./HAL/external_eeprom.o ./HAL/lM35_TempSensor.o  ./App/MCU1.o   
+Finished building target: MCU1.elf
+ 
+Invoking: AVR Create Extended Listing
+avr-objdump -h -S MCU1.elf  >"MCU1.lss"
+Finished building: MCU1.lss
+ 
+Create Flash image (ihex format)
+avr-objcopy -R .eeprom -R .fuse -R .lock -R .signature -O ihex MCU1.elf  "MCU1.hex"
+Finished building: MCU1.hex
+ 
+Invoking: Print Size
+avr-size --format=avr --mcu=atmega32 MCU1.elf
+AVR Memory Usage
+----------------
+Device: atmega32
+
+Program:   19164 bytes (58.5% Full)
+(.text + .data + .bootloader)
+
+Data:        327 bytes (16.0% Full)
+(.data + .bss + .noinit)
+
+
+Finished building: sizedummy
+ 
+
+23:08:59 Build Finished. 0 errors, 1 warnings. (took 852ms)
+

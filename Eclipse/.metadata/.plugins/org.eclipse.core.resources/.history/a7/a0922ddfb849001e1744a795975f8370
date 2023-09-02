@@ -1,0 +1,38 @@
+/******************************************************************************
+ *
+ * Module: Common - Platform Types Abstraction
+ *
+ * File Name: Servo_Motor.h
+ *
+ * Description: types for AVR
+ *
+ * Date Created: 2/9/2023
+ *
+ * Author: Moustafa Ahmed
+ *
+ *******************************************************************************/
+
+/**-------------------------INCLUDES Section------------------------**/
+#include "Header/Servo_Motor.h"
+
+#include "../Libraries/Libraries.h"
+#include "../MCAL/Header/GPIO.h"
+
+/**-------------------------Global Section--------------------------**/
+
+/**-------------------------Definitions & Config Section------------**/
+
+/**-------------------------Function Definition Section-------------**/
+/*
+ * Description:
+ * Initializing SERVO Motor
+ */
+void ServoMotor_Init(void)
+{
+	return;
+}
+/*-------------------------------------------------------------------*/
+
+
+/**---------------------------------END-----------------------------**/
+

@@ -1,0 +1,82 @@
+/******************************************************************************
+ *
+ * Module: Common - Platform Types Abstraction
+ *
+ * File Name: CURT.c
+ *
+ * Description: types for AVR
+ *
+ * Date Created: 1/9/2023
+ *
+ * Author: Moustafa Ahmed Adel
+ *
+ *******************************************************************************/
+/**-------------------------INCLUDES Section------------------------**/
+
+#include <stdio.h>
+#include "../HAL/Header/DcMotor.h"
+#include "../HAL/Header/lM35_TempSensor.h"
+#include "../HAL/Header/external_eeprom.h"
+#include "../HAL/Header/LCD.h"
+#include "../Libraries/Libraries.h"
+#include "../Libraries/std_types.h"
+#include "../MCAL/Header/TIMER.h"
+#include "../MCAL/Header/UART.h"
+/**-------------------------Extern  Section-------------------------**/
+
+/**-------------------------Global  Section-------------------------**/
+
+/**-------------------------STRUCTURES------------------------------**/
+
+
+/**-------------------------Function Dec. Section-------------------**/
+
+/*-------------------------------------------------------------------*/
+
+
+/**-------------------------Function Section------------------------**/
+/* Initializing all drivers */
+void Drivers_init(void)
+{
+
+	/* Initializing ADC */
+	ADC_ConfigType ADC_Config = {AVCC, F_ADC128};
+	ADC_init(&ADC_Config);
+	/* Initializing LCD */
+	LCD_init();
+	/* ------------------------------------------------------------------ */
+	/* Activating Interrupt system */
+	//SREG |= (1<<7);
+}
+
+/* ------------------------------------------------------------------ */
+
+int main()
+{
+	/**-----------------------Local Variables----------------------**/
+	uint8 temp_value = 0;
+	/**-----------------------Pre-start Section--------------------**/
+
+	/* Initializing all drivers: UART, DCMotor, Timer0, LCD, Stepper Motor */
+	Drivers_init();
+
+	/**-----------------------Main Section-------------------------**/
+	while(1)
+	{
+		/* Read the temperature */
+		temp_value = ADC_readChannel(0);
+		LCD_moveCursor(0, 0);
+		/* Display on LCD */
+		LCD_displayCharacter(temp_value);
+
+	}
+
+	return 0;
+}
+/**-------------------------END MAIN--------------------------------**/
+
+/**-------------------------Function Section------------------------**/
+
+/*-------------------------------------------------------------------*/
+
+/*-------------------------------------------------------------------*/

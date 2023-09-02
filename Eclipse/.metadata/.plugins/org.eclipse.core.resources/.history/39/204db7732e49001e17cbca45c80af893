@@ -1,0 +1,34 @@
+/******************************************************************************
+ *
+ * Module: Common - Platform Types Abstraction
+ *
+ * File Name: status_leds.c
+ *
+ * Description: types for AVR
+ *
+ * Date Created: 2/9/2023
+ *
+ * Author: Moustafa Ahmed
+ *
+ *******************************************************************************/
+
+/**-------------------------INCLUDES Section------------------------**/
+
+/**-------------------------Global Section--------------------------**/
+
+/**-------------------------Definitions & Config Section------------**/
+
+/**-------------------------Function Definition Section-------------**/
+/*
+ * Description:
+ * Initializing Stepper Motor
+ */
+
+/*-------------------------------------------------------------------*/
+/*
+ * Description:
+ * Step the motor in a given direction
+ */
+
+/**---------------------------------END-----------------------------**/
+

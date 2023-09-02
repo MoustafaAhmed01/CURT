@@ -1,0 +1,104 @@
+/******************************************************************************
+ *
+ * Module: Common - Platform Types Abstraction
+ *
+ * File Name: CURT.c
+ *
+ * Description: types for AVR
+ *
+ * Date Created: 1/9/2023
+ *
+ * Author: Moustafa Ahmed Adel
+ *
+ *******************************************************************************/
+/**-------------------------INCLUDES Section------------------------**/
+
+#include <stdio.h>
+#include "../HAL/Header/DcMotor.h"
+#include "../HAL/Header/lM35_TempSensor.h"
+#include "../HAL/Header/external_eeprom.h"
+#include "../HAL/Header/LCD.h"
+#include "../Libraries/Libraries.h"
+#include "../Libraries/std_types.h"
+#include "../MCAL/Header/TIMER.h"
+#include "../MCAL/Header/UART.h"
+#include "../MCAL/Header/ADC.h"
+#include "../MCAL/Header/TWI.h"
+/**-------------------------Extern  Section-------------------------**/
+
+/**-------------------------Global  Section-------------------------**/
+
+/**-------------------------STRUCTURES------------------------------**/
+
+
+/**-------------------------Function Dec. Section-------------------**/
+
+/*-------------------------------------------------------------------*/
+
+
+/**-------------------------Function Section------------------------**/
+/* Initializing all drivers */
+void Drivers_init(void)
+{
+
+	/* Initializing ADC */
+	ADC_ConfigType ADC_Config = {AVCC, F_ADC128};
+	ADC_init(&ADC_Config);
+	/* Initializing LCD */
+	LCD_init();
+
+	/* Initializing TWI */
+	/*
+	 * file name: twi.h
+	 *  -> Structure Configuration:
+	 *
+	 *  interruptControl :
+	 *  ackControl :
+	 *  twiControl :
+	 *  prescalerControl :
+	 *  callRecControl :
+	 *  address :
+	 *  bit_rate : 400,000 kbps
+	 */
+	TWI_ConfigType TWI_Config = {TWI_INT_DISABLED, ACK_OFF, TWI_ENABLED,F_I2C_1, CALL_RECOGNITION_OFF, 1,3};
+	TWI_init(&TWI_Config);
+	/* ------------------------------------------------------------------ */
+	/* Activating Interrupt system */
+	//SREG |= (1<<7);
+}
+
+/* ------------------------------------------------------------------ */
+
+int main()
+{
+	/**-----------------------Local Variables----------------------**/
+	uint8 val = 0;
+	/**-----------------------Pre-start Section--------------------**/
+
+	/* Initializing all drivers: UART, DCMotor, Timer0, LCD, Stepper Motor */
+	Drivers_init();
+
+	/**-----------------------Main Section-------------------------**/
+
+	EEPROM_writeByte(0x0311, 0x0F); /* Write 0x0F in the external EEPROM */
+	_delay_ms(10);
+	EEPROM_readByte(0x0311, &val);  /* Read 0x0F from the external EEPROM */
+
+	while(1)
+	{
+
+
+		LCD_moveCursor(0,0);
+		LCD_intgerToString(val);
+
+	}
+
+	return 0;
+}
+/**-------------------------END MAIN--------------------------------**/
+
+/**-------------------------Function Section------------------------**/
+
+/*-------------------------------------------------------------------*/
+
+/*-------------------------------------------------------------------*/

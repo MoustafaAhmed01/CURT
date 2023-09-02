@@ -1,0 +1,41 @@
+/******************************************************************************
+ *
+ * Module: Common - Platform Types Abstraction
+ *
+ * File Name: Servo_Motor.h
+ *
+ * Description: types for AVR
+ *
+ * Date Created: 2/9/2023
+ *
+ * Author: Moustafa Ahmed
+ *
+ *******************************************************************************/
+
+#ifndef HAL_HEADER_SERVO_MOTOR_H_
+#define HAL_HEADER_SERVO_MOTOR_H_
+
+/**-------------------------INCLUDES Section------------------------**/
+
+#include "../../Libraries/std_types.h"
+
+/**-------------------------Definitions & Config Section------------**/
+
+
+/**-------------------------Enum Section----------------------------**/
+
+
+/**-------------------------Function Dec. Section-------------------**/
+/*
+ * Description:
+ * Initializing SERVO Motor
+ */
+void ServoMotor_Init(void);
+/*
+ * Description:
+ * Move the motor in a given direction
+ */
+
+/**-------------------------END-------------------------------------**/
+#endif /* HAL_HEADER_SERVO_MOTOR_H_ */
+

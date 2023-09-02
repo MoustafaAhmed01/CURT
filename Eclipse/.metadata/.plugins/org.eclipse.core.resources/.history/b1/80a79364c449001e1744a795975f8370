@@ -1,0 +1,53 @@
+/******************************************************************************
+ *
+ * Module: Common - Platform Types Abstraction
+ *
+ * File Name: Servo_Motor.h
+ *
+ * Description: types for AVR
+ *
+ * Date Created: 2/9/2023
+ *
+ * Author: Moustafa Ahmed
+ *
+ *******************************************************************************/
+
+/**-------------------------INCLUDES Section------------------------**/
+#include "Header/Servo_Motor.h"
+
+#include "../Libraries/Libraries.h"
+#include "../MCAL/Header/GPIO.h"
+
+/**-------------------------Global Section--------------------------**/
+
+/**-------------------------Definitions & Config Section------------**/
+
+/**-------------------------Function Definition Section-------------**/
+/*
+ * Description:
+ * Initializing SERVO Motor
+ */
+void ServoMotor_Rotate(uint8 angle)
+{
+	  // Ensure the angle is within the valid range (0-180 degrees)
+	    if (angle < SERVO_MIN_ANGLE) {
+	        angle = SERVO_MIN_ANGLE;
+	    } else if (angle > SERVO_MAX_ANGLE) {
+	        angle = SERVO_MAX_ANGLE;
+	    }
+
+	    // Calculate PWM value based on the desired angle
+	    uint16_t pwmValue = PWM_MIN + (uint16_t)angle * (PWM_MAX - PWM_MIN) / (SERVO_MAX_ANGLE - SERVO_MIN_ANGLE);
+
+	    // Activate Timer2 PWM with the calculated duty cycle
+	    Timer2_PWM_Activate(&pwmValue);
+
+	    // Wait for the servo to reach the desired position (delay may need adjustment)
+	    _delay_ms(500); // You may need to adjust the delay depending on your servo
+
+	return;
+}
+/*-------------------------------------------------------------------*/
+
+
+/**---------------------------------END-----------------------------**/

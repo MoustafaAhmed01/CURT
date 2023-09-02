@@ -1,0 +1,421 @@
+/******************************************************************************
+ *
+ * Module: Common - Platform Types Abstraction
+ *
+ * File Name: CURT.c
+ *
+ * Description: types for AVR
+ *
+ * Date Created: 1/9/2023
+ *
+ * Author: Moustafa Ahmed Adel
+ *
+ *******************************************************************************/
+/**-------------------------INCLUDES Section------------------------**/
+
+#include <stdio.h>
+#include "../HAL/Header/DcMotor.h"
+#include "../HAL/Header/buzzer.h"
+#include "../HAL/Header/LCD.h"
+#include "../HAL/Header/Servo_Motor.h"
+#include "../HAL/Header/potentiometer.h"
+#include "../HAL/Header/status_leds.h"
+#include "../Libraries/Libraries.h"
+#include "../Libraries/std_types.h"
+#include "../MCAL/Header/TIMER.h"
+#include "../MCAL/Header/UART.h"
+#include "../MCAL/Header/ADC.h"
+
+/**-------------------------Macros----------------------------------**/
+#define CONTROL_READY 0x10
+/**-------------------------Enum Section----------------------------**/
+
+/*
+ * Description:
+ * Defining System state
+ * Target: Synch both MCUs to be in the same state
+ */
+typedef enum
+{
+	NORMAL_STATE, EMERGENCY_STATE, ABNORMAL_STATE, SHUTDOWN_STATE
+}System_State;
+
+/**-------------------------Extern  Section-------------------------**/
+
+/**-------------------------Global  Section-------------------------**/
+/* Timer1 Counter */
+uint8 g_Counter = 0;
+
+/* Machine flag */
+uint8 g_MachineEn = 1;
+
+/* Creating Global Variable to be used all over the code for controlling System state */
+System_State g_SystemState = NORMAL_STATE;
+
+/*
+ * Description:
+ *  Initializing Timer1 to be used in Emergency state
+ *  Configurations will be discussed @ Drivers_Init() function
+ */
+Timer1_ConfigType TIMER1_Config = {Normal_A,Normal_B,Channel_A_ON,Channel_B_OFF,TIMER1_FALLING_EDGE,NOISE_CANCELER_OFF,F_TIMER11024,CTC_OCR1A,ENABLE_INTERRUPT,DISABLE_INTERRUPT,DISABLE_INTERRUPT,0,12400,0};
+
+/**-------------------------Function Dec. Section-------------------**/
+
+/*
+ * Description:
+ * Will be called when Timer1 interrupts
+ */
+void Timer1_Handler(void);/*
+ * Description:
+ * Controlling Normal state
+ */
+void Normal_State(void);
+/* ---------------------------------------- */
+
+/*
+ * Description:
+ * Controlling Emergency state
+ */
+void Emergency_State(void);
+/* ---------------------------------------- */
+
+/*
+ * Description:
+ * Controlling Abnormal state
+ */
+void Abnormal_State(void);
+/* ---------------------------------------- */
+
+/*
+ * Description:
+ * Controlling Shutdown state if push button was pushed
+ */
+void ShutDown_State(void);
+/* ---------------------------------------- */
+
+/*
+ * Description:
+ * Controlling states
+ */
+void State_Control(void);
+/* ---------------------------------------- */
+
+/*-------------------------------------------------------------------*/
+
+
+/**-------------------------Function Section------------------------**/
+/* Initializing all drivers */
+void Drivers_init(void)
+{
+
+	/* Initializing ADC */
+	/*
+	 * ADC_ReferenceVoltage : AVCC
+	 * ADC_Prescaler : F_CPU/128
+	 */
+	ADC_ConfigType ADC_Config = {AVCC, F_ADC128};
+	ADC_init(&ADC_Config);
+	/* ---------------------------------------- */
+
+	/* Initializing LCD just for TEST*/
+	LCD_init();
+	/* ---------------------------------------- */
+
+	/* Initializing UART */
+	/*
+	 * UART_trSpeed : Double Speed
+	 * UART_RECEIVE_INT : No
+	 * UART_TRANSMIT_INT : No
+	 * UART_EMPTY_INT : No
+	 * UART_RECEIVER : Yes
+	 * UART_TRANSMITTER : Yes
+	 * UART_CharSize : 8-bit
+	 * UART_REG_SELECT : UBRRH
+	 * UART_MODE_SELECT : A-sync
+	 * UART_PARITY_SELECT : No
+	 * UART_STOP_BIT_SELECT : 1-bit
+	 * UART_CLOCK_POLARITY : A-sync Rising
+	 * baud_rate : 9600
+	 *
+	 */
+	UART_ConfigType UART_Config = {DOUBLE_TR_SPEED,RECEIVE_INT_EN_OFF,TRANSMIT_INT_EN_OFF,EMPTY_INT_EN_OFF,RECEIVER_EN_ON,TRANSMITTER_EN_ON,EIGHT_BIT,UBRRH_REG,ASYNCHRONOUS,PARITY_DISABLE,ONE_BIT,A_Sync_RISING_EDGE,9600};
+	UART_init(&UART_Config);
+	/* ---------------------------------------- */
+
+	/* Initializing Timer0 PWM */
+	Timer0_ConfigType Timer0_PWM_Config;
+	Timer0_PWM_Config.Timer0_PreScaler = F0_TIMER64; /* F_CPU/64. Assuming F_PWM = 976.5 Hz */
+	Timer0_PWM_Init(&Timer0_PWM_Config);
+	/* ---------------------------------------- */
+
+	/* Initializing Timer2 PWM */
+	Timer2_ConfigType Timer2_PWM_Config;
+	Timer2_PWM_Config.Timer2_PreScaler = F2_TIMER64; /* F_CPU/64. Assuming F_PWM = 976.5 Hz */
+	Timer2_PWM_Init(&Timer2_PWM_Config);
+	/* ---------------------------------------- */
+
+	/* Initializing Timer 1 */
+	/*
+	 * file name: TIMER.h
+	 *  -> Structure Configuration:
+	 *
+	 *  CompareModeA : Normal
+	 *  CompareModeB : Normal
+	 *  ForceCompareA : Activated
+	 *  ForceCompareB : Disabled
+	 *  EdgeControl : ---
+	 *  NoiseControl : Disabled
+	 *  F_TIMER1_CLOCK : F_CPU/1024
+	 *  WaveForm : CTC mode ,TOP: OCR1A
+	 *  interruptA : Enabled
+	 *  interruptB : Disabled
+	 *  interruptOvf : Disabled
+	 *  TCNT1_Value : 0
+	 *  OCR1A_Value : 7813
+	 *  OCR1B_Value : ---
+	 */
+	/* Setting the callback function*/
+	Timer1_setCallBackONE(Timer1_Handler);
+
+
+	/* ---------------------------------------- */
+
+	/* Initializing FAN */
+	DCMotor_init();
+	/* ---------------------------------------- */
+
+	/* Initializing Buzzer */
+	Buzzer_init();
+	/* ---------------------------------------- */
+
+	/* Initializing Status LEDs */
+	Status_LEDS_Init();
+	/* ---------------------------------------- */
+	/* Activating Interrupt system */
+	SREG |= (1<<7);
+}
+
+/* ------------------------------------------------------------------ */
+
+int main()
+{
+	/**-----------------------Local Variables----------------------**/
+
+	/**-----------------------Pre-start Section--------------------**/
+
+	/* Initializing all drivers: UART, DCMotor, Timer0, LCD, Stepper Motor */
+	Drivers_init();
+
+	/**-----------------------Main Section-------------------------**/
+
+	while(1)
+	{
+		/* State Control function */
+		State_Control();
+
+		if(NORMAL_STATE == g_SystemState)
+		{
+			/* Disable the buzzer */
+			Buzzer_off();
+
+			/* Servo Motor returns to zero */
+			ServoMotor_Rotate(0);
+			/* Operate the Normal instructions */
+			Normal_State();
+		}
+		else if(EMERGENCY_STATE == g_SystemState)
+		{
+			/* Operate the Emergency protocol */
+			Emergency_State();
+		}
+		else if(ABNORMAL_STATE == g_SystemState)
+		{
+			/* Just call the Abnormal state function */
+			Abnormal_State();
+		}
+		else if(SHUTDOWN_STATE == g_SystemState)
+		{
+			ShutDown_State();
+		}
+		else
+		{
+			/* Do nothing */
+		}
+	}
+
+	return 0;
+}
+/**-------------------------END MAIN--------------------------------**/
+
+/**-------------------------Function Section------------------------**/
+/*
+ * Description:
+ * Will be called when Timer1 interrupts
+ */
+void Timer1_Handler(void)
+{
+	/* Increment the counter */
+	g_Counter++;
+}
+/* ---------------------------------------- */
+/*
+ * Description:
+ * Controlling Normal state
+ */
+void Normal_State(void)
+{
+	/**-----------------------Local Variables----------------------**/
+	uint8 a_MCU1_State = 0;
+	uint16 a_PotentiometerVal = 0;
+	/**-----------------------Main Section-------------------------**/
+	/* Receive state from MCU1 */
+	UART_sendByte(CONTROL_READY);
+	a_MCU1_State = UART_receiveByte();
+
+	/* Check on the received byte */
+	if('G' == a_MCU1_State || 'Y' == a_MCU1_State || 'R' == a_MCU1_State)
+	{
+		/* Check on the LED color */
+		if('G' == a_MCU1_State)
+		{
+			Status_LEDS_Color(Green_LED);
+
+			/* Enable Machine */
+			g_MachineEn = 1;
+		}
+		else if('Y' == a_MCU1_State)
+		{
+			Status_LEDS_Color(Yellow_LED);
+
+			/* Enable Machine */
+			g_MachineEn = 1;
+		}
+		else
+		{
+			Status_LEDS_Color(Red_LED);
+		}
+
+		if(g_MachineEn)
+		{
+			/* Read the Potentiometer value */
+			a_PotentiometerVal = Potentiometer_getVal();
+
+			/* Enable the Machine */
+			DcMotor_Rotate(ClockWise, 255*(a_PotentiometerVal/1023.0));
+		}
+		else
+		{
+			/* Do nothing */
+		}
+
+	}
+	else if( 'H' == a_MCU1_State)
+	{
+		/* Do nothing till the next update */
+	}
+	else
+	{
+		/* Do nothing */
+	}
+
+}
+/* ---------------------------------------- */
+
+/*
+ * Description:
+ * Controlling Emergency state
+ */
+void Emergency_State(void)
+{
+	/* Enable RED LED */
+	Status_LEDS_Color(Red_LED);
+
+	/* Enable the buzzer */
+	Buzzer_on();
+}
+/* ---------------------------------------- */
+
+/*
+ * Description:
+ * Controlling Abnormal state
+ */
+void Abnormal_State(void)
+{
+	/* Enable RED LED */
+	Status_LEDS_Color(Red_LED);
+
+	/* Enable the buzzer */
+	Buzzer_on();
+
+	/* Stop the machine */
+	DCMotor_stop();
+
+	/* Servo 90 degrees */
+	ServoMotor_Rotate(90);
+
+	/* Activate Timer1 for 5 seconds */
+	Timer1_Init(&TIMER1_Config);
+	while(g_Counter != 5); /* Wait 5 seconds */
+	Timer1_deInit();
+
+	/* Clear Counter */
+	g_Counter = 0;
+
+}
+/* ---------------------------------------- */
+
+/*
+ * Description:
+ * Controlling Shutdown state if push button was pushed
+ */
+void ShutDown_State(void)
+{
+	/* Stop the MACHINE */
+	DCMotor_stop();
+
+	/* Enable RED lED */
+	Status_LEDS_Color(Red_LED);
+
+	/*Disable Machine*/
+	g_MachineEn = 0;
+}
+/* ---------------------------------------- */
+
+/*
+ * Description:
+ * Controlling states
+ */
+void State_Control(void)
+{
+	/**-----------------------Local Variables----------------------**/
+	uint8 a_MCU1_State = 0;
+	/**-----------------------Main Section-------------------------**/
+	/* Receive state from MCU1 */
+	UART_sendByte(CONTROL_READY);
+	a_MCU1_State = UART_receiveByte(); /* Receiving only a byte which indicates which state we are */
+
+	/* Check on the state */
+	if('A' == a_MCU1_State)
+	{
+		g_SystemState = ABNORMAL_STATE;
+	}
+	else if('E' == a_MCU1_State)
+	{
+		g_SystemState = EMERGENCY_STATE;
+
+	}
+	else if('S' == a_MCU1_State)
+	{
+		g_SystemState = SHUTDOWN_STATE;
+	}
+	else
+	{
+		g_SystemState = NORMAL_STATE;
+	}
+
+	return;
+}
+/* ---------------------------------------- */
+
+
+/*-------------------------------------------------------------------*/
